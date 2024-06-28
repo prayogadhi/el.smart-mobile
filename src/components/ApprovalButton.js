@@ -7,14 +7,7 @@ import {
 import React, { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
 import axios from "axios";
-import {
-  TextInput,
-  Icon,
-  Dialog,
-  Portal,
-  Button,
-  Divider,
-} from "react-native-paper";
+import { TextInput, Dialog, Portal, Button, Divider } from "react-native-paper";
 
 const ApprovalButton = (props) => {
   const [note, setNote] = useState("");
@@ -24,24 +17,25 @@ const ApprovalButton = (props) => {
   const showDialog = () => setVisible(true);
   const hideDialog = () => setVisible(false);
 
-  const onApprove = () => {
-    console.log(props.id);
+  const onApproveCorsec = (status) => {
+    console.log(status);
+    console.log("corsec");
 
     const url =
-      process.env.EXPO_PUBLIC_API_URL + "/bussinees-trip/sekper-approved";
+      process.env.EXPO_PUBLIC_API_URL + "/business-trip/corsec-approval";
     axios
       .put(
         url,
         {
           id_form_pd_k32: props.id,
-          pemeriksa_status: 2,
+          pemeriksa_status: status,
           catatanSekper: note,
-          pemeriksa_Nama: props.name,
           pemeriksa_NIK: props.nik,
+          pemeriksa_Nama: props.name,
         },
         {
           headers: {
-            token: props.token,
+            Authorization: `Bearer ${props.token}`,
           },
         }
       )
@@ -51,6 +45,51 @@ const ApprovalButton = (props) => {
         console.log(result);
         if (status === "success") {
           navigation.navigate("Pemeriksaan Perjalanan Dinas", {
+            nik: props.nik,
+            approvement: true,
+            nama_lengkap: props.name,
+            token: props.token,
+          });
+        }
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+  };
+
+  const onApproveManager = (status) => {
+    console.log(
+      props.id,
+      props.role_status,
+      props.second_approval,
+      props.token,
+      note
+    );
+
+    const url =
+      process.env.EXPO_PUBLIC_API_URL + "/business-trip/manager-approval";
+    axios
+      .put(
+        url,
+        {
+          id_form_pd_k32: props.id,
+          approval_status: status,
+          role_status: props.role_status,
+          second_approval: props.second_approval,
+          catatan: note,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${props.token}`,
+          },
+        }
+      )
+      .then((response) => {
+        const res = response.data;
+        const { status, result } = res;
+        console.log(result);
+        if (status === "success") {
+          navigation.navigate("Persetujuan Perjalanan Dinas", {
             nik: props.nik,
             approvement: true,
             nama_lengkap: props.name,
@@ -96,20 +135,33 @@ const ApprovalButton = (props) => {
           >
             <View className="flex-row">
               <Button
+                mode="text"
+                onPress={hideDialog}
                 className="mr-3 rounded-md"
                 textColor="#64748B"
-                mode="text"
               >
                 Cancel
               </Button>
-              <Button
-                mode="contained"
-                onPress={() => onApprove()}
-                buttonColor="#212d42"
-                className="rounded-md"
-              >
-                Approve
-              </Button>
+              {/* Approve Action */}
+              {props.sekper_status ? (
+                <Button
+                  mode="contained"
+                  onPress={() => onApproveCorsec(2)}
+                  buttonColor="#212d42"
+                  className="rounded-md"
+                >
+                  Approve
+                </Button>
+              ) : (
+                <Button
+                  mode="contained"
+                  onPress={() => onApproveManager(2)}
+                  buttonColor="#212d42"
+                  className="rounded-md"
+                >
+                  Approve
+                </Button>
+              )}
             </View>
           </Dialog.Actions>
         </Dialog>
@@ -139,12 +191,21 @@ const ApprovalButton = (props) => {
         </Button>
       </View>
       <View className="items-center mt-2">
-        <Text
-          className="text-xs text-gray-500"
-          style={{ fontFamily: "NotoSansJP" }}
-        >
-          Apakah biaya perjalanan dinas sudah sesuai?
-        </Text>
+        {props.sekper_status ? (
+          <Text
+            className="text-xs text-gray-500"
+            style={{ fontFamily: "NotoSansJP" }}
+          >
+            Apakah biaya perjalanan dinas sudah sesuai?
+          </Text>
+        ) : (
+          <Text
+            className="text-xs text-gray-500"
+            style={{ fontFamily: "NotoSansJP" }}
+          >
+            Apakah anda menyetujui perjalanan dinas?
+          </Text>
+        )}
       </View>
     </View>
   );

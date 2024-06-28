@@ -5,6 +5,7 @@ import axios from "axios";
 import { Appbar, Icon, ActivityIndicator } from "react-native-paper";
 import background from "../../assets/top_layout.png";
 import ApprovalButton from "../../components/ApprovalButton";
+import { capitalizeWords } from "../helpers"
 
 const DetailScreen = ({ route, navigation }) => {
   const [isLoading, setIsLoading] = useState(true);
@@ -26,6 +27,7 @@ const DetailScreen = ({ route, navigation }) => {
     pemeriksa_status,
     penyetuju_status_1,
     penyetuju_status_2,
+    role_status,
     status_PD,
     jenisPD,
   } = route.params.data;
@@ -39,6 +41,27 @@ const DetailScreen = ({ route, navigation }) => {
   } else if (TripType === "LN") {
     setTripType("Luar Negeri");
   }
+
+  const expensesTrip = (cost) => {
+    if (cost !== "0") {
+      return (
+        <View>
+          <Text
+            className="text-xs self-end mr-2"
+            style={{ fontFamily: "NotoSansJP" }}
+          >
+            Jumlah
+          </Text>
+          <Text
+            className="text-3xl self-end"
+            style={{ fontFamily: "NotoSansJP-SemiBold" }}
+          >
+            {cost}
+          </Text>
+        </View>
+      );
+    }
+  };
 
   const anotherApprover = (penyetuju_Nama_2) => {
     if (penyetuju_Nama_2 !== null) {
@@ -70,51 +93,55 @@ const DetailScreen = ({ route, navigation }) => {
 
   const approvalButton = (approvement) => {
     if (approvement === true) {
+      const sekper_status = route.params.sekper_status;
       return (
         <ApprovalButton
           id={id_form_pd_k32}
           nik={sekper_nik}
           name={sekper_nama}
           token={token}
+          sekper_status={sekper_status}
+          role_status={role_status}
+          second_approval={penyetuju_Nama_2}
         ></ApprovalButton>
       );
     }
   };
 
   const statusIcon = (statusValue) => {
-    if (statusValue === "0") {
+    if (statusValue === 0) {
+      return <Icon source="timeline-text-outline" color="#c0c2c7" size={25} />;
+    } else if (statusValue === 1) {
       return <Icon source="timeline-clock-outline" color="#d97700" size={25} />;
-    } else if (statusValue === "1") {
+    } else if (statusValue === 2) {
+      return <Icon source="timeline-check-outline" color="#0D9488" size={25} />;
+    } else if (statusValue === 3) {
       return (
         <Icon source="timeline-remove-outline" color="#B91C1C" size={25} />
       );
-    } else if (statusValue === "2") {
-      return <Icon source="timeline-check-outline" color="#0D9488" size={25} />;
     }
   };
   // Capitalize the First Letter of Each Word
-  const capitalizeWords = (str) => {
-    return str
-      .toLowerCase()
-      .split(" ")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-  };
+  // const capitalizeWords = (str) => {
+  //   return str
+  //     .toLowerCase()
+  //     .split(" ")
+  //     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+  //     .join(" ");
+  // };
 
   // Detail data
   const token = route.params.token;
 
   const fetchData = async () => {
-    const url =
-      process.env.EXPO_PUBLIC_API_URL + "/bussinees-trip/form-detail-get";
+    const url = process.env.EXPO_PUBLIC_API_URL + "/business-trip/detail";
     axios
-      // const response = await axios
       .get(url, {
         params: {
           id_form_pd_k32: id_form_pd_k32,
         },
         headers: {
-          token: token,
+          Authorization: `Bearer ${token}`,
         },
       })
       .then((response) => {
@@ -283,9 +310,9 @@ const DetailScreen = ({ route, navigation }) => {
                   Pelaksana
                 </Text>
                 {/* START: Daftar Pelaksana */}
-                {Detail.result && Detail.result.length > 0 && (
+                {Detail.details && Detail.details.length > 0 && (
                   <View className="mt-2">
-                    {Detail.result.map((data) => {
+                    {Detail.details.map((data) => {
                       return (
                         <View key={data.id_form_pd_k32_detail} className="mb-5">
                           <View className="flex-row justify-between items-center">
@@ -315,20 +342,7 @@ const DetailScreen = ({ route, navigation }) => {
                                 {data.jabatan}
                               </Text>
                             </View>
-                            <View>
-                              <Text
-                                className="text-xs self-end mr-2"
-                                style={{ fontFamily: "NotoSansJP" }}
-                              >
-                                Jumlah
-                              </Text>
-                              <Text
-                                className="text-3xl self-end"
-                                style={{ fontFamily: "NotoSansJP-SemiBold" }}
-                              >
-                                {data.lp_jumlah}
-                              </Text>
-                            </View>
+                            {expensesTrip(data.lp_jumlah)}
                           </View>
 
                           <View

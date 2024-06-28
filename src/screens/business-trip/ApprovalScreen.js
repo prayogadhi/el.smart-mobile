@@ -3,22 +3,31 @@ import React, { useState, useEffect, useCallback } from "react";
 import { ActivityIndicator } from "react-native-paper";
 
 import axios from "axios";
-import { TokenContext } from "../../../context/TokenContext";
-import BusinessTripCard from "../../../components/BusinessTripCard";
-import EmptyData from "../../../components/EmptyData";
+import BusinessTripCard from "../../components/BusinessTripCard";
+import EmptyData from "../../components/EmptyData";
 
-import { capitalizeWords } from "./../../helpers";
+import { capitalizeWords } from "./../helpers";
 
-const ITEMS_PER_PAGE = 5; // Number of items to load per scroll
+const ITEMS_PER_PAGE = 5;
 
-const RejectedScreen = ({ navigation }) => {
-  const { nik, token } = React.useContext(TokenContext);
+const ApprovalScreen = ({ navigation, route }) => {
+  const { token, nik } = route.params;
+  const sekper_status = false;
+  const approvement = true;
 
   const [BusinessTrip, setBusinessTrip] = useState([]);
   const [displayedTrips, setDisplayedTrips] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", () => {
+      fetchData();
+      console.log("Refreshed!");
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -29,11 +38,12 @@ const RejectedScreen = ({ navigation }) => {
 
   const fetchData = async () => {
     const url =
-      process.env.EXPO_PUBLIC_API_URL + "/business-trip/rejected-status";
+      process.env.EXPO_PUBLIC_API_URL + "/business-trip/manager-approval-status";
     axios
       .get(url, {
         params: {
-          applicant_nik: nik,
+          nik: nik,
+          status: 1,
         },
         headers: {
           Authorization: `Bearer ${token}`,
@@ -89,6 +99,8 @@ const RejectedScreen = ({ navigation }) => {
         navigation.navigate("Rincian Perjalanan Dinas", {
           data: data,
           token: token,
+          approvement: approvement,
+          sekper_status: sekper_status,
         })
       }
     >
@@ -99,8 +111,8 @@ const RejectedScreen = ({ navigation }) => {
         nama_kegiatan={nama_kegiatan}
         tanggal_pengajuan={tanggal_pengajuan}
         lokasi={capitalizeWords(lokasi.substring(0, 25))}
-        color="#B91C1C"
-        soft_color="rgba(185, 28, 28, 0.2)"
+        color="#D97706"
+        soft_color="rgba(217, 119, 6, 0.2)"
         style={isLastItem ? 20 : 0}
       />
     </TouchableOpacity>
@@ -151,4 +163,4 @@ const RejectedScreen = ({ navigation }) => {
   );
 };
 
-export default RejectedScreen;
+export default ApprovalScreen;

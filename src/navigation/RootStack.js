@@ -15,12 +15,14 @@ import Step1Screen from "../screens/business-trip/submission-form/Step1Screen";
 import Step2Screen from "../screens/business-trip/submission-form/Step2Screen";
 import Step3Screen from "../screens/business-trip/submission-form/Step3Screen";
 import ConfirmationScreen from "../screens/business-trip/submission-form/ConfirmationScreen";
+import SuccessScreen from "../screens/business-trip/submission-form/SuccessScreen";
 // Business Trip Status
 import BusinessTripPendingStatus from "../screens/business-trip/status/PendingScreen";
 import BusinessTripApprovedStatus from "../screens/business-trip/status/ApprovedScreen";
 import BusinessTripRejectedStatus from "../screens/business-trip/status/RejectedScreen";
 
 import ReviewScreen from "../screens/business-trip/ReviewScreen";
+import ApprovalScreen from "../screens/business-trip/ApprovalScreen";
 
 import { Provider as PaperProvider } from "react-native-paper";
 
@@ -74,6 +76,18 @@ const RootStack = () => {
                     component={ReviewScreen}
                   />
 
+                  <Stack.Screen
+                    name="Persetujuan Perjalanan Dinas"
+                    options={{
+                      headerShown: true,
+                      headerStyle: {
+                        backgroundColor: "#1f2d42",
+                      },
+                      headerTintColor: "#fff",
+                    }}
+                    component={ApprovalScreen}
+                  />
+
                   {/* START: Business Trip Submission */}
                   <Stack.Screen
                     name="Step 1"
@@ -88,7 +102,7 @@ const RootStack = () => {
                     component={Step1Screen}
                   />
                   <Stack.Screen
-                    name="Step2"
+                    name="Step 2"
                     options={{
                       headerShown: true,
                       headerStyle: {
@@ -100,7 +114,7 @@ const RootStack = () => {
                     component={Step2Screen}
                   />
                   <Stack.Screen
-                    name="Step3"
+                    name="Step 3"
                     options={{
                       headerShown: true,
                       headerStyle: {
@@ -123,7 +137,9 @@ const RootStack = () => {
                     }}
                     component={ConfirmationScreen}
                   />
+                  <Stack.Screen name="Success" component={SuccessScreen} />
                   {/* END: Business Trip Submission */}
+
                   <Stack.Screen
                     name="Status Perjalanan Dinas"
                     options={{
