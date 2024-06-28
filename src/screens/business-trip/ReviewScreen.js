@@ -1,16 +1,24 @@
-import { View, ScrollView, TouchableOpacity } from "react-native";
-import React, { useState, useEffect } from "react";
+import { View, RefreshControl, FlatList, TouchableOpacity } from "react-native";
+import React, { useState, useEffect, useCallback } from "react";
 import { ActivityIndicator } from "react-native-paper";
 
 import axios from "axios";
 import BusinessTripCard from "../../components/BusinessTripCard";
 import EmptyData from "../../components/EmptyData";
 
+import { capitalizeWords } from "./../helpers";
+
+const ITEMS_PER_PAGE = 5;
+
 const ReviewScreen = ({ navigation, route }) => {
-  const token = route.params.token;
-  const approvement = route.params.approvement;
-  const sekper_nik = route.params.sekper_nik;
-  const sekper_name = route.params.sekper_name;
+  const { token, sekper_nik, sekper_name, approvement } = route.params;
+  const sekper_status = true;
+
+  const [BusinessTrip, setBusinessTrip] = useState([]);
+  const [displayedTrips, setDisplayedTrips] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", () => {
@@ -20,23 +28,28 @@ const ReviewScreen = ({ navigation, route }) => {
     return unsubscribe;
   }, [navigation]);
 
-  const [BusinessTrip, setBusinessTrip] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchData().then(() => {
+      setRefreshing(false);
+    });
+  }, []);
 
   const fetchData = async () => {
-    const url = process.env.EXPO_PUBLIC_API_URL + "/bussinees-trip/sekper-get";
+    const url = process.env.EXPO_PUBLIC_API_URL + "/business-trip/corsec-check";
     axios
-      // const response = await axios
       .get(url, {
         params: {
           pemeriksa_status: 1,
         },
         headers: {
-          token: token,
+          Authorization: `Bearer ${token}`,
         },
       })
       .then((response) => {
-        setBusinessTrip(response.data);
+        setBusinessTrip(response.data.details);
+        setDisplayedTrips(response.data.details.slice(0, ITEMS_PER_PAGE));
+        setCurrentIndex(ITEMS_PER_PAGE);
         setIsLoading(false);
       });
   };
@@ -45,13 +58,15 @@ const ReviewScreen = ({ navigation, route }) => {
     fetchData();
   }, []);
 
-  // Capitalize the First Letter of Each Word
-  const capitalizeWords = (str) => {
-    return str
-      .toLowerCase()
-      .split(" ")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
+  const loadMoreData = () => {
+    if (currentIndex < BusinessTrip.length) {
+      const nextIndex = currentIndex + ITEMS_PER_PAGE;
+      setDisplayedTrips((prevTrips) => [
+        ...prevTrips,
+        ...BusinessTrip.slice(currentIndex, nextIndex),
+      ]);
+      setCurrentIndex(nextIndex);
+    }
   };
 
   if (isLoading) {
@@ -65,47 +80,84 @@ const ReviewScreen = ({ navigation, route }) => {
     );
   }
 
+  const Item = ({
+    kode_kegiatan,
+    nomor,
+    status,
+    nama_kegiatan,
+    tanggal_pengajuan,
+    lokasi,
+    data,
+    token,
+    isLastItem,
+  }) => (
+    <TouchableOpacity
+      onPress={() =>
+        navigation.navigate("Rincian Perjalanan Dinas", {
+          data: data,
+          token: token,
+          approvement: approvement,
+          sekper_status: sekper_status,
+          sekper_nik: sekper_nik,
+          sekper_name: sekper_name,
+        })
+      }
+    >
+      <BusinessTripCard
+        kode_kegiatan={kode_kegiatan}
+        nomor={nomor}
+        status={status.toUpperCase()}
+        nama_kegiatan={nama_kegiatan}
+        tanggal_pengajuan={tanggal_pengajuan}
+        lokasi={capitalizeWords(lokasi.substring(0, 25))}
+        color="#D97706"
+        soft_color="rgba(217, 119, 6, 0.2)"
+        style={isLastItem ? 20 : 0}
+      />
+    </TouchableOpacity>
+  );
+
+  const renderItem = ({ item, index }) => {
+    const isLastItem = index === displayedTrips.length - 1;
+    return (
+      <Item
+        kode_kegiatan={item.kode_kegiatan}
+        nomor={item.nomor}
+        status={item.status}
+        nama_kegiatan={item.nama_kegiatan}
+        tanggal_pengajuan={item.tanggal_pengajuan}
+        lokasi={item.lokasi}
+        data={item}
+        token={token}
+        isLastItem={isLastItem}
+      />
+    );
+  };
+
   return (
     <View
       className="flex-1 flex-col justify-around"
       style={{ backgroundColor: "#f1f5f9" }}
     >
-      {BusinessTrip.result && BusinessTrip.result.length > 0 && (
-        <ScrollView>
-          <View className="mt-5">
-            {BusinessTrip.result.map((data) => {
-              return (
-                <View key={data.id_form_pd_k32}>
-                  <TouchableOpacity
-                    onPress={() =>
-                      navigation.navigate("Rincian Perjalanan Dinas", {
-                        data: data,
-                        token: token,
-                        approvement: approvement,
-                        sekper_nik: sekper_nik,
-                        sekper_name: sekper_name,
-                      })
-                    }
-                  >
-                    <BusinessTripCard
-                      kode_kegiatan={data.pengaju_nama_lengkap}
-                      nomor={data.nomor}
-                      status={data.status.toUpperCase()}
-                      nama_kegiatan={data.nama_kegiatan}
-                      tanggal_pengajuan={data.tanggal_pengajuan}
-                      lokasi={capitalizeWords(data.lokasi.substring(0, 25))}
-                      color="rgba(217, 119, 6, 1)"
-                      soft_color="rgba(217, 119, 6, 0.2)"
-                    />
-                  </TouchableOpacity>
-                </View>
-              );
-            })}
-          </View>
-        </ScrollView>
+      {displayedTrips.length > 0 ? (
+        <FlatList
+          data={displayedTrips}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id_form_pd_k32}
+          contentContainerStyle={{ flexGrow: 1 }}
+          style={{ alignSelf: "stretch" }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          onEndReached={loadMoreData}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            isLoading ? <ActivityIndicator size="large" /> : null
+          }
+        />
+      ) : (
+        <EmptyData />
       )}
-      {!BusinessTrip.result ||
-        (BusinessTrip.result.length === 0 && <EmptyData />)}
     </View>
   );
 };

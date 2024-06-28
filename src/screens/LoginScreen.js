@@ -7,11 +7,10 @@ import {
   Linking,
 } from "react-native";
 import React, { useState, useContext } from "react";
-// import {ArrowLeftIcon} from 'react-native-heroicons/solid'
+import { StatusBar } from "expo-status-bar";
 import { Appbar, TextInput } from "react-native-paper";
 import background from "../assets/top_layout.png";
 import { useForm, Controller } from "react-hook-form";
-import Constants from "expo-constants";
 
 import axios from "axios";
 
@@ -45,14 +44,14 @@ const LoginScreen = ({ navigation }) => {
       username: data.nik,
       password: data.password,
     };
-    const baseUrl = process.env.EXPO_PUBLIC_API_URL + "/auth";
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL + "/login";
     axios
       .post(baseUrl, credentials)
       .then((response) => {
         const res = response.data;
-        const { status, result } = res;
-        if (status === "success") {
-          persistLogin(result);
+        const { success, details } = res;
+        if (success === true) {
+          persistLogin(details);
         }
       })
       .catch(function (error) {
@@ -78,6 +77,7 @@ const LoginScreen = ({ navigation }) => {
 
   return (
     <View className="flex-1 flex-col justify-around">
+      <StatusBar style="light" />
       <ImageBackground className="flex-1 justify-center" source={background}>
         <View className="flex-1">
           <Appbar.Header className="bg-transparent">

@@ -5,8 +5,11 @@ import { Icon } from "react-native-paper";
 const BusinessTripCard = (props) => {
   return (
     <View
-      className="m-5 mt-0 p-3 justify-between"
-      style={[styles.card, { borderLeftColor: props.color }]}
+      className="mx-5 mt-5 p-3 justify-between"
+      style={[
+        styles.card,
+        { borderLeftColor: props.color, marginBottom: props.style },
+      ]}
     >
       {props.nomor ? (
         <Text
@@ -74,11 +77,6 @@ const styles = StyleSheet.create({
   card: {
     borderLeftWidth: 4,
     borderRadius: 6,
-    elevation: 10,
     backgroundColor: "#fff",
-    shadowOffset: { width: 0, height: 0 },
-    shadowColor: "#dfdfdf",
-    shadowOpacity: 1,
-    shadowRadius: 2,
   },
 });
